@@ -1,8 +1,7 @@
-export const featureFlags = {
-  enableTemplates: true,
-  enableAdvancedAnalytics: false,
-  enableTeamWorkspace: false,
-  // ... other features
+export const features = {
+  useNewGenerator: false,
+  useNewExporter: false,
+  useNewTemplates: false
 };
 
 // Usage in components
