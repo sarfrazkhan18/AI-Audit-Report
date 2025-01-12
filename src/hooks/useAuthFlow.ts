@@ -1,37 +1,44 @@
-import { useCallback } from 'react';
-import { FirebaseError } from 'firebase/app';
-import { signInWithProvider, SocialProvider } from '../utils/auth/authProviders';
-import { useAuthError } from './useAuthError';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
+  signOut 
+} from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 
-export const useAuthFlow = () => {
-  const { error, setError, clearError } = useAuthError();
-  const navigate = useNavigate();
+export function useAuthFlow() {
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleAuth = useCallback(async (providerName: SocialProvider) => {
-    clearError();
+  const login = async (email: string, password: string) => {
     try {
-      await signInWithProvider(providerName);
-      navigate('/dashboard');
-    } catch (error) {
-      console.error('Authentication error:', error);
-      if (error instanceof FirebaseError) {
-        if (error.code === 'auth/network-request-failed') {
-          setError(new Error('Network error. Please check your internet connection and try again.'));
-        } else if (error.code === 'auth/unauthorized-domain') {
-          setError(new Error('This domain is not authorized for authentication. Please try again later.'));
-        } else {
-          setError(error);
-        }
-      } else if (error instanceof Error) {
-        setError(error);
-      }
+      setLoading(true);
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-  }, [clearError, setError, navigate]);
-
-  return {
-    error,
-    handleAuth,
-    clearError
   };
-};
+
+  const register = async (email: string, password: string) => {
+    try {
+      setLoading(true);
+      await createUserWithEmailAndPassword(auth, email, password);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await signOut(auth);
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
+  return { login, register, logout, error, loading };
+}
